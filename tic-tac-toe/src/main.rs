@@ -3,6 +3,7 @@ use std::str;
 
 use rustyline::Editor;
 
+#[derive(std::cmp::PartialEq)]
 enum BoardValue {
     None,
     X,
@@ -76,6 +77,17 @@ struct Game {
     current_player: Player,
 }
 
+enum PlaySuccess {
+    Continue,
+    XWins,
+    OWins,
+    Draw,
+}
+
+enum PlayError {
+    InvalidMove,
+}
+
 impl Game {
     fn new() -> Self {
         Game {
@@ -83,18 +95,42 @@ impl Game {
             current_player: Player::default(),
         }
     }
+
+    fn play(&mut self, row: usize, column: usize) -> Result<PlaySuccess, PlayError> {
+        if self.board.state[row][column] != BoardValue::None {
+            return Err(PlayError::InvalidMove);
+        }
+
+        self.board.state[row][column] = match self.current_player {
+            Player::X => BoardValue::X,
+            Player::O => BoardValue::O,
+        };
+
+        self.current_player = match self.current_player {
+            Player::X => Player::O,
+            Player::O => Player::X,
+        };
+
+        Ok(PlaySuccess::Continue)
+    }
 }
 
 fn main() {
-    let game = Game::new();
+    let mut game = Game::new();
 
     println!("Welcome to tic tac toe!");
     loop {
         println!("{}", game.board);
         println!("It's {}'s turn.", game.current_player);
-        let inputs = get_row_and_column().unwrap();
-        println!("{}, {}", inputs.0, inputs.1);
-        break;
+
+        let inputs = match get_row_and_column() {
+            Ok(inputs) => inputs,
+            Err(_) => return,
+        };
+        let result = game.play(inputs.0, inputs.1);
+        if result.is_err() {
+            break;
+        }
     }
 }
 
