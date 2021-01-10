@@ -87,10 +87,9 @@ struct Game {
     current_player: Player,
 }
 
-enum PlaySuccess {
+enum GameStatus {
     Continue,
-    XWins,
-    OWins,
+    PlayerWins(Player),
     Draw,
 }
 
@@ -106,7 +105,7 @@ impl Game {
         }
     }
 
-    fn play(&mut self, row: usize, column: usize) -> Result<PlaySuccess, PlayError> {
+    fn play(&mut self, row: usize, column: usize) -> Result<GameStatus, PlayError> {
         if self.board[row][column] != BoardValue::Empty {
             return Err(PlayError::InvalidMove);
         }
@@ -118,7 +117,7 @@ impl Game {
             Player::O => Player::X,
         };
 
-        Ok(PlaySuccess::Continue)
+        Ok(GameStatus::Continue)
     }
 }
 
