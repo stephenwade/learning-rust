@@ -4,33 +4,28 @@ use std::str;
 
 use rustyline::Editor;
 
-#[derive(std::cmp::PartialEq)]
+#[derive(PartialEq)]
 enum BoardValue {
-    None,
-    X,
-    O,
+    Filled(Player),
+    Empty,
 }
 
 impl fmt::Display for BoardValue {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            f,
-            "{}",
-            match self {
-                BoardValue::None => " ",
-                BoardValue::X => "X",
-                BoardValue::O => "O",
-            }
-        )
+        match self {
+            Self::Filled(player) => write!(f, "{}", player),
+            Self::Empty => write!(f, " "),
+        }
     }
 }
 
 impl Default for BoardValue {
     fn default() -> Self {
-        BoardValue::None
+        BoardValue::Empty
     }
 }
 
+#[derive(Clone, Copy, PartialEq)]
 enum Player {
     X,
     O,
@@ -112,14 +107,11 @@ impl Game {
     }
 
     fn play(&mut self, row: usize, column: usize) -> Result<PlaySuccess, PlayError> {
-        if self.board[row][column] != BoardValue::None {
+        if self.board[row][column] != BoardValue::Empty {
             return Err(PlayError::InvalidMove);
         }
 
-        self.board[row][column] = match self.current_player {
-            Player::X => BoardValue::X,
-            Player::O => BoardValue::O,
-        };
+        self.board[row][column] = BoardValue::Filled(self.current_player);
 
         self.current_player = match self.current_player {
             Player::X => Player::O,
