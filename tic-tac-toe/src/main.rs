@@ -1,4 +1,5 @@
 use std::fmt;
+use std::ops::{Deref, DerefMut};
 use std::str;
 
 use rustyline::Editor;
@@ -54,20 +55,34 @@ impl Default for Player {
     }
 }
 
+type BoardType = [[BoardValue; 3]; 3];
+
 #[derive(Default)]
-struct Board {
-    state: [[BoardValue; 3]; 3],
+struct Board(BoardType);
+
+impl Deref for Board {
+    type Target = BoardType;
+
+    fn deref(&self) -> &BoardType {
+        &self.0
+    }
+}
+
+impl DerefMut for Board {
+    fn deref_mut(&mut self) -> &mut BoardType {
+        &mut self.0
+    }
 }
 
 impl fmt::Display for Board {
     #[rustfmt::skip]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         writeln!(f, "┌───┬───┬───┐")?;
-        writeln!(f, "│ {} │ {} │ {} │", self.state[0][0], self.state[0][1], self.state[0][2])?;
+        writeln!(f, "│ {} │ {} │ {} │", self[0][0], self[0][1], self[0][2])?;
         writeln!(f, "├───┼───┼───┤")?;
-        writeln!(f, "│ {} │ {} │ {} │", self.state[1][0], self.state[1][1], self.state[1][2])?;
+        writeln!(f, "│ {} │ {} │ {} │", self[1][0], self[1][1], self[1][2])?;
         writeln!(f, "├───┼───┼───┤")?;
-        writeln!(f, "│ {} │ {} │ {} │", self.state[2][0], self.state[2][1], self.state[2][2])?;
+        writeln!(f, "│ {} │ {} │ {} │", self[2][0], self[2][1], self[2][2])?;
         write!  (f, "└───┴───┴───┘")
     }
 }
@@ -97,11 +112,11 @@ impl Game {
     }
 
     fn play(&mut self, row: usize, column: usize) -> Result<PlaySuccess, PlayError> {
-        if self.board.state[row][column] != BoardValue::None {
+        if self.board[row][column] != BoardValue::None {
             return Err(PlayError::InvalidMove);
         }
 
-        self.board.state[row][column] = match self.current_player {
+        self.board[row][column] = match self.current_player {
             Player::X => BoardValue::X,
             Player::O => BoardValue::O,
         };
