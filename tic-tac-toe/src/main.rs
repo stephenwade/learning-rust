@@ -21,7 +21,7 @@ impl fmt::Display for BoardValue {
 
 impl Default for BoardValue {
     fn default() -> Self {
-        BoardValue::Empty
+        Self::Empty
     }
 }
 
@@ -37,8 +37,8 @@ impl fmt::Display for Player {
             f,
             "{}",
             match self {
-                Player::X => "X",
-                Player::O => "O",
+                Self::X => "X",
+                Self::O => "O",
             }
         )
     }
