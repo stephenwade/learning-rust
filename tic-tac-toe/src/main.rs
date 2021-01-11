@@ -4,7 +4,7 @@ use std::str;
 
 use rustyline::Editor;
 
-#[derive(PartialEq)]
+#[derive(Clone, Copy, PartialEq)]
 enum BoardValue {
     Filled(Player),
     Empty,
@@ -22,6 +22,16 @@ impl fmt::Display for BoardValue {
 impl Default for BoardValue {
     fn default() -> Self {
         Self::Empty
+    }
+}
+
+impl BoardValue {
+    fn player(self) -> Player {
+        if let Self::Filled(player) = self {
+            player
+        } else {
+            panic!("not filled")
+        }
     }
 }
 
@@ -82,11 +92,34 @@ impl fmt::Display for Board {
     }
 }
 
+impl Board {
+    fn get_winnable_slices(&self) -> Vec<[&BoardValue; 3]> {
+        vec![
+            // Horizontal
+            [&self[0][0], &self[0][1], &self[0][2]],
+            [&self[1][0], &self[1][1], &self[1][2]],
+            [&self[2][0], &self[2][1], &self[2][2]],
+            // Vertical
+            [&self[0][0], &self[1][0], &self[2][0]],
+            [&self[0][1], &self[1][1], &self[2][1]],
+            [&self[0][2], &self[1][2], &self[2][2]],
+            // Diagonal
+            [&self[0][0], &self[1][1], &self[2][2]],
+            [&self[0][2], &self[1][1], &self[2][0]],
+        ]
+    }
+
+    fn get_all_cells(&self) -> Vec<&BoardValue> {
+        self.iter().flatten().collect::<Vec<&BoardValue>>()
+    }
+}
+
 struct Game {
     board: Board,
     current_player: Player,
 }
 
+#[derive(PartialEq)]
 enum GameStatus {
     Continue,
     PlayerWins(Player),
@@ -112,12 +145,35 @@ impl Game {
 
         self.board[row][column] = BoardValue::Filled(self.current_player);
 
-        self.current_player = match self.current_player {
-            Player::X => Player::O,
-            Player::O => Player::X,
-        };
+        let game_status = self.get_game_status();
 
-        Ok(GameStatus::Continue)
+        if game_status == GameStatus::Continue {
+            self.current_player = match self.current_player {
+                Player::X => Player::O,
+                Player::O => Player::X,
+            };
+        }
+
+        Ok(game_status)
+    }
+
+    fn get_game_status(&self) -> GameStatus {
+        for slice in self.board.get_winnable_slices() {
+            if slice[0] != &BoardValue::Empty && slice[0] == slice[1] && slice[1] == slice[2] {
+                return GameStatus::PlayerWins(slice[0].player());
+            }
+        }
+
+        if self
+            .board
+            .get_all_cells()
+            .into_iter()
+            .all(|cell| *cell != BoardValue::Empty)
+        {
+            return GameStatus::Draw;
+        }
+
+        GameStatus::Continue
     }
 }
 
@@ -133,10 +189,22 @@ fn main() {
             Ok(inputs) => inputs,
             Err(_) => return,
         };
-        let result = game.play(inputs.0, inputs.1);
-        if result.is_err() {
-            break;
-        }
+        match game.play(inputs.0, inputs.1) {
+            Ok(GameStatus::Continue) => continue,
+            Ok(GameStatus::Draw) => {
+                println!("{}", game.board);
+                println!("It's a draw.");
+                return;
+            }
+            Ok(GameStatus::PlayerWins(player)) => {
+                println!("{}", game.board);
+                println!("{} wins!", player);
+                return;
+            }
+            Err(PlayError::InvalidMove) => {
+                println!("Invalid move. Please try again.");
+            }
+        };
     }
 }
 
