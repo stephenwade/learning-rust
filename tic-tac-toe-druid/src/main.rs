@@ -25,7 +25,7 @@ use std::f64::consts::PI;
 
 use druid::kurbo::{Circle, Line};
 use druid::widget::prelude::*;
-use druid::widget::Container;
+use druid::widget::{Flex, MainAxisAlignment};
 use druid::{AppLauncher, Color, LocalizedString, Point, Vec2, WindowDesc};
 
 struct AnimWidget {
@@ -80,7 +80,9 @@ impl Widget<()> for AnimWidget {
 }
 
 fn anim_widget_container() -> impl Widget<()> {
-    AnimWidget { t: 0.0, delta: 0.2 }
+    Flex::column()
+        .main_axis_alignment(MainAxisAlignment::Center)
+        .with_child(AnimWidget { t: 0.0, delta: 0.2 })
 }
 
 pub fn main() {
