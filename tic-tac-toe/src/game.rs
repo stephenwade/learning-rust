@@ -116,7 +116,6 @@ pub struct Game {
     pub current_player: Player,
 }
 
-#[derive(PartialEq)]
 pub enum GameStatus {
     Continue,
     PlayerWins(Player),
@@ -136,7 +135,7 @@ impl Game {
     }
 
     pub fn play(&mut self, row: usize, column: usize) -> Result<GameStatus, PlayError> {
-        if self.board[row][column] != BoardValue::Empty {
+        if matches!(self.board[row][column], BoardValue::Filled(_)) {
             return Err(PlayError::InvalidMove);
         }
 
@@ -144,7 +143,7 @@ impl Game {
 
         let game_status = self.get_game_status();
 
-        if game_status == GameStatus::Continue {
+        if matches!(game_status, GameStatus::Continue) {
             self.current_player = match self.current_player {
                 Player::X => Player::O,
                 Player::O => Player::X,
@@ -156,7 +155,10 @@ impl Game {
 
     fn get_game_status(&self) -> GameStatus {
         for slice in self.board.get_winnable_slices() {
-            if slice[0] != &BoardValue::Empty && slice[0] == slice[1] && slice[1] == slice[2] {
+            if matches!(*slice[0], BoardValue::Filled(_))
+                && slice[0] == slice[1]
+                && slice[1] == slice[2]
+            {
                 return GameStatus::PlayerWins(slice[0].player());
             }
         }
@@ -165,7 +167,7 @@ impl Game {
             .board
             .get_all_cells()
             .into_iter()
-            .all(|cell| *cell != BoardValue::Empty)
+            .all(|cell| matches!(*cell, BoardValue::Filled(_)))
         {
             return GameStatus::Draw;
         }
